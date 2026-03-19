@@ -1,0 +1,33 @@
+version: "3.9"
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: voxmentor-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  voxmentor:
+    build: .
+    container_name: voxmentor-app
+    ports:
+      - "8000:8000"
+    environment:
+      - VOXMENTOR_OLLAMA_BASE_URL=http://ollama:11434
+      - VOXMENTOR_OLLAMA_MODEL=mistral
+      - VOXMENTOR_SECRET_KEY=${SECRET_KEY:-change-me-in-production}
+    depends_on:
+      - ollama
+    restart: unless-stopped
+
+volumes:
+  ollama_data:
